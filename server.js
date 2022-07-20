@@ -1,16 +1,17 @@
 require("./db/mongoconfig");
-require('./passport/local.js')
+require("./passport/local.js");
+require("dotenv").config();
 const express = require("express");
 const productos = require("./routes/productos.js");
+const randoms = require("./routes/randoms.js");
 const http = require("http");
 const { knexMySql } = require("./db/db.js");
 const Mensaje = require("./models/Mensajes");
 const { normalize, schema } = require("normalizr");
 const { inspect } = require("util");
 const session = require("express-session");
-const passport = require('passport')
-
-
+const passport = require("passport");
+const cors = require('cors')
 
 const MongoStore = require("connect-mongo");
 const advancedOptions = { useNewUrlParser: true, useUnifiedTopology: true };
@@ -29,15 +30,15 @@ app.use(express.static(__dirname + "/public"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api", productos);
+app.use("/api", randoms);
 app.use(
   session({
     store: MongoStore.create({
       //En Atlas connect App :  Make sure to change the node version to 2.2.12:
-      mongoUrl:
-        "mongodb://anyone:1svhFxNnP6jwqW8F@proyecto-final-shard-00-00.obuuu.mongodb.net:27017,proyecto-final-shard-00-01.obuuu.mongodb.net:27017,proyecto-final-shard-00-02.obuuu.mongodb.net:27017/?ssl=true&replicaSet=atlas-xzhi9f-shard-0&authSource=admin&retryWrites=true&w=majority",
+      mongoUrl: `mongodb://anyone:${process.env.MONGOPASS}@proyecto-final-shard-00-00.obuuu.mongodb.net:27017,proyecto-final-shard-00-01.obuuu.mongodb.net:27017,proyecto-final-shard-00-02.obuuu.mongodb.net:27017/?ssl=true&replicaSet=atlas-xzhi9f-shard-0&authSource=admin&retryWrites=true&w=majority`,
       mongoOptions: advancedOptions,
     }),
-    secret: "shhhhhhhhhhhhhhhhhhhhh",
+    secret: process.env.SECRETKEY,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -45,8 +46,9 @@ app.use(
     },
   })
 );
-app.use(passport.initialize())
-app.use(passport.session())
+app.use(cors())
+app.use(passport.initialize());
+app.use(passport.session());
 
 const autorSchema = new schema.Entity("autores");
 
@@ -144,7 +146,6 @@ io.on("connection", (socket) => {
 
 //  ---------- LOGIN ----------
 
-
 // ---------- Funcion para autorizar, si estas logeado te manda a la ruta principal, sino a la ruta /login ----------
 
 function auth(req, res, next) {
@@ -155,19 +156,21 @@ function auth(req, res, next) {
   }
 }
 
-app.get('/registro', (req, res)=>{
-  res.render('register')
-})
+app.get("/registro", (req, res) => {
+  res.render("register");
+});
 
-app.post("/registro", passport.authenticate('registro', {
-  successRedirect: '/login',
-failureRedirect: '/errorRegistro',
+app.post(
+  "/registro",
+  passport.authenticate("registro", {
+    successRedirect: "/login",
+    failureRedirect: "/errorRegistro",
+  })
+);
 
-}));
-
-app.get('/errorRegistro', (req, res) => {
-res.render('error-register')
-})
+app.get("/errorRegistro", (req, res) => {
+  res.render("error-register");
+});
 
 // ---------- Ruta /login te direcciona al formulario ----------
 
@@ -177,16 +180,17 @@ app.get("/login", (req, res) => {
 
 // ---------- Metodo post para cargar el usuario ----------
 
-app.post("/login", passport.authenticate('login', {
-  successRedirect: '/',
-  failureRedirect: '/errorLogin',
-  
-})
+app.post(
+  "/login",
+  passport.authenticate("login", {
+    successRedirect: "/",
+    failureRedirect: "/errorLogin",
+  })
 );
 
-app.get('/errorLogin', (req, res) => {
-  res.render('error-login')
-})
+app.get("/errorLogin", (req, res) => {
+  res.render("error-login");
+});
 
 // ---------- Ruta /logout te despide si estabas logeado, sino te redirecciona a la ruta principal ----------
 
@@ -236,10 +240,29 @@ app.post("/", (req, res) => {
     });
 });
 
-const PORT = process.env.PORT || 8080;
+app.get("/info", (req, res) => {
+  res.send({
+    ArgumentosDeEntrada: args,
+    NombrePlataforma: process.platform,
+    VersionNode: process.version,
+    MemoriaTotalReservada: process.memoryUsage(),
+    PathEjecucion: process.execPath,
+    ProcessID: process.pid,
+    CarpetaProyecto: process.cwd(),
+  });
+});
 
-server.listen(PORT, () => {
+const yargs = require("yargs/yargs")(process.argv.slice(2));
+const args = yargs
+  .default({
+    PORT: 8080,
+  })
+  .alias({
+    p: "PORT",
+  }).argv;
+
+server.listen(args.PORT, () => {
   console.log(
-    `Servidor http creado con express escuchando en el puerto ${PORT}`
+    `Servidor http creado con express escuchando en el puerto ${args.PORT}`
   );
 });

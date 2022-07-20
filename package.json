@@ -13,6 +13,8 @@
   "dependencies": {
     "bcrypt": "^5.0.1",
     "connect-mongo": "^4.6.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.1",
     "ejs": "^3.1.7",
     "express": "^4.17.3",
     "express-session": "^1.17.3",
@@ -23,7 +25,8 @@
     "normalizr": "^3.6.2",
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
-    "socket.io": "^4.5.0"
+    "socket.io": "^4.5.0",
+    "yargs": "^17.5.1"
   },
   "devDependencies": {
     "@faker-js/faker": "^7.3.0",
